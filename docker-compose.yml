@@ -1,50 +1,21 @@
-version: '3'
+version: "3.8"
+
 services:
-  zookeeper:
-    image: wurstmeister/zookeeper:latest
-    ports:
-      - "2181:2181"
-  kafka:
-    image: wurstmeister/kafka:2.11-1.1.1
+  kafka-1:
+    image: bitnami/kafka:latest
     ports:
       - "9092:9092"
-    links:
-      - zookeeper
     environment:
-      KAFKA_ADVERTISED_HOST_NAME: 'localhost'
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
-      KAFKA_DELETE_TOPIC_ENABLE: 'true'
-      KAFKA_CREATE_TOPICS: "topic-test:1:1"
+      - KAFKA_CFG_NODE_ID=1
+      - KAFKA_KRAFT_CLUSTER_ID=PVjHlx7ESeesq55jeB6Efw
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka-1:9091
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9090,CONTROLLER://:9091,EXTERNAL://:9092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka-1:9090,EXTERNAL://${HOSTNAME:-localhost}:9092
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-
-  service-billing:
-    image: postgres
-    restart: unless-stopped
-    environment:
-      - POSTGRES_USER=api
-      - POSTGRES_PASSWORD=development_pass
-      - POSTGRES_MULTIPLE_DATABASES="billing-api","billing-api-testing"
-    volumes:
-      - ./docker-utils:/docker-entrypoint-initdb.d
-      - billing_api_data:/data/postgres
-    ports:
-      - 5439:5432
-
-  service-auth:
-    image: postgres
-    restart: unless-stopped
-    environment:
-      - POSTGRES_USER=api
-      - POSTGRES_PASSWORD=development_pass
-      - POSTGRES_MULTIPLE_DATABASES="auth-api","auth-api-testing"
-    volumes:
-      - ./docker-utils:/docker-entrypoint-initdb.d
-      - auth_api_data:/data/postgres
-    ports:
-      - 5440:5432
-
+      - kafka-data:/bitnami/kafka
 volumes:
-  billing_api_data: {}
-  auth_api_data: {}
+  kafka-data: {}
